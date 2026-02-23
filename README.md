@@ -109,17 +109,25 @@ B-TREE/
 |버전|Insertion 시간|Search 시간|메모리 사용량(Insertion)|메모리 사용량(Search)|
 |---|---|---|---|---|
 |기본 구현|1.28 seconds|6.90 seconds|18.42 MB|61.46 MB|
-|최적화 버전|X.XX seconds|X.XX seconds|X.XX MB|X.XX MB|
+|최적화 버전|1.18 seconds|0.57 seconds|17.58 MB|61.46 MB|
 
+[기본 구현]
 <img width="481" height="392" alt="Image" src="https://github.com/user-attachments/assets/32ad3b6a-12b1-43a1-9c46-72dc33dc7722" />
+
+[최적화 버전]
+<img width="469" height="397" alt="Image" src="https://github.com/user-attachments/assets/4efa1bac-fc13-44d1-be04-499aefb3a69d" />
 
 - input22.csv
 |버전|Insertion 시간|Search 시간|메모리 사용량(Insertion)|메모리 사용량(Search)|
 |---|---|---|---|---|
 |기본 구현|7.61 seconds|10.06 seconds|18.78 MB|61.36 MB|
-|최적화 버전|X.XX seconds|X.XX seconds|X.XX MB|X.XX MB|
+|최적화 버전|6.84 seconds|1.33 seconds|18.17 MB|61.46 MB|
 
+[기본 구현]
 <img width="483" height="389" alt="Image" src="https://github.com/user-attachments/assets/18de64cc-f8ab-4eda-ab9b-f2d8b4d2bfa8" />
+
+[최적화 버전]
+<img width="496" height="385" alt="Image" src="https://github.com/user-attachments/assets/1c063de4-05d0-407e-8d4d-17d0e07d5b09" />
 
 ### Deletion 최적화
 
@@ -127,14 +135,22 @@ B-TREE/
 |버전|Deletion 시간|Search 시간|메모리 사용량(Deletion)|메모리 사용량(Search)|
 |---|---|---|---|---|
 |기본 구현|3.96 seconds|6.59 seconds|9.07 MB|61.36 MB|
-|최적화 버전|X.XX seconds|X.XX seconds|X.XX MB|X.XX MB|
+|최적화 버전|0.49 seconds|0.53 seconds|9.07 MB|61.36 MB|
 
+[기본 구현]
 <img width="667" height="418" alt="Image" src="https://github.com/user-attachments/assets/2455298a-e5a2-4635-b540-c64a2b79f00d" />
+
+[최적화 버전]
+<img width="664" height="412" alt="Image" src="https://github.com/user-attachments/assets/fa763db3-892d-4a48-9906-d4ab37de7c7f" />
 
 - delete2.csv
 |버전|Deletion 시간|Search 시간|메모리 사용량(Deletion)|메모리 사용량(Search)|
 |---|---|---|---|---|
 |기본 구현|4.90 seconds|8.19 seconds|8.67 MB|61.36 MB|
-|최적화 버전|X.XX seconds|X.XX seconds|X.XX MB|X.XX MB|
+|최적화 버전|0.94 seconds|1.16 seconds|8.67 MB|61.36 MB|
 
+[기본 구현]
 <img width="667" height="417" alt="Image" src="https://github.com/user-attachments/assets/dfc7cd5d-70ec-4261-9614-c6920938a7b3" />
+
+[최적화 버전]
+<img width="668" height="417" alt="Image" src="https://github.com/user-attachments/assets/10593251-5d62-46c3-8ec3-ff138258e320" />

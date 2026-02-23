@@ -1,7 +1,11 @@
 import time
 import tracemalloc
+from bisect import bisect_left
 
 class Node:
+    # 메모리 최적화를 위해 __slots__ 사용
+    # __slots__ 의 기능: 객체가 가질 수 있는 속성을 미리 정의하여 메모리 사용량을 줄임
+    __slots__ = ['keys', 'vals', 'kids', 'leaf']
     def __init__(self, leaf=True):
         self.keys = []
         self.vals = []
@@ -16,24 +20,21 @@ class BTree:
         self.root = Node()
 
     # Search 메서드
-    # k: 검색할 key, n: 현재 node (default: 루트 node), i: 현재 key의 인덱스
+    # k: 검색할 key, n: 현재 node (default: 루트 node)
     def search(self, k, n=None):
-        if n is None:
-            n = self.root
-        # 현재 node의 키들을 순회하며 검색 (linear search)
-        # key가 현재 node의 key보다 클 때까지 인덱스 증가
-        i = 0
-        while i < len(n.keys) and k > n.keys[i]:
-            i += 1
-        # key를 찾았을 때: key가 현재 node의 key와 같으면 해당 value 반환
-        if i < len(n.keys) and k == n.keys[i]:
-            return n.vals[i]
-        # 현재 node가 리프 노드이면 None 반환
-        elif n.leaf:
-            return None
-        else:
-            return self.search(k, n.kids[i])
-    
+        n = self.root
+        while True:
+            # binary search를 사용하여 key의 위치를 탐색
+            i = bisect_left(n.keys, k)
+            # key가 현재 node에 존재할 때: value 반환
+            if i < len(n.keys) and n.keys[i] == k:
+                return n.vals[i]
+            # key가 현재 node에 존재하지 않을 때: leaf node이면 None 반환
+            if n.leaf:
+                return None
+            # key가 현재 node에 존재하지 않고 leaf node가 아닐 때: child node
+            n = n.kids[i]
+            
     # Insert 메서드
     # rn: 현재 root node, k: 삽입할 key, v: 삽입할 value
     def insert(self, k, v):
@@ -106,10 +107,8 @@ class BTree:
     # n: 현재 node, k: 삭제할 key
     def _delete(self, n, k):
         t = self.t
-        # 현재 node에서 key의 위치를 찾음
-        i = 0
-        while i < len(n.keys) and k > n.keys[i]:
-            i += 1
+        # binary search를 사용하여 key의 위치를 탐색
+        i = bisect_left(n.keys, k)
         
         # 1) key가 현재 node에 존재할 때
         if i < len(n.keys) and n.keys[i] == k:
@@ -121,15 +120,15 @@ class BTree:
                 # 2) internal node일 때: 세 가지 경우로 나눔 (아래에서 구현 예정)
                 self.delete_internal_node(n, i)
         else:
-            # 3) key가 현재 node에 존재하지 않을 때:  leaf node이면 key가 없으므로 종료
+            # 3) key가 현재 node에 존재하지 않을 때: leaf node이면 key가 없으므로 종료
             if n.leaf:
                 return  # key가 트리에 존재하지 않음
-            
-            # child node가 최소 키 수보다 적을 때: child node를 채우기 (key 개수 확보)
+            # 
+            # child node가 최소 키 수보다 적을 때: child node를 채움 (key 개수 확보)
             if len(n.kids[i].keys) < t:
                 self.fill(n, i)
-                
-            #fill 후에 child node가 변경될 수 있으므로 다시 탐색 (index i 조정)
+            
+            # fill 후에 child node가 변경될 수 있으므로 다시 탐색 (index i 조정)
             if i > len(n.keys):
                 i -= 1
             

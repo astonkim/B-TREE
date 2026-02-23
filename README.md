@@ -100,3 +100,37 @@ B-TREE/
     - 해당 key를 leaf node에서 재귀적으로 삭제
 4. 재균형이 루트까지 전파될 수 있음
     - 루트가 비어있으면 자식이 새 루트가 됨, 트리 높이 감소
+
+## 7. 알고리즘 성능 최적화
+
+### Search & Insertion 최적화 성능 비교
+
+- input.csv
+|버전|Insertion 시간|Search 시간|메모리 사용량(Insertion)|메모리 사용량(Search)|
+|---|---|---|---|---|
+|기본 구현|1.28 seconds|6.90 seconds|18.42 MB|61.46 MB|
+|최적화 버전|X.XX seconds|X.XX seconds|X.XX MB|X.XX MB|
+
+<img width="481" height="392" alt="Image" src="https://github.com/user-attachments/assets/32ad3b6a-12b1-43a1-9c46-72dc33dc7722" />
+
+- input22.csv
+|버전|Insertion 시간|Search 시간|메모리 사용량(Insertion)|메모리 사용량(Search)|
+|---|---|---|---|---|
+|기본 구현|7.61 seconds|10.06 seconds|18.78 MB|61.36 MB|
+|최적화 버전|X.XX seconds|X.XX seconds|X.XX MB|X.XX MB|
+
+<img width="483" height="389" alt="Image" src="https://github.com/user-attachments/assets/18de64cc-f8ab-4eda-ab9b-f2d8b4d2bfa8" />
+
+### Deletion 최적화
+
+- delete.csv
+|버전|Deletion 시간|메모리 사용량(Deletion)|
+|---|---|---|
+|기본 구현|X.XX seconds||X.XX MB|
+|최적화 버전|X.XX seconds|X.XX MB|
+
+- delete2.csv
+|버전|Deletion 시간|메모리 사용량(Deletion)|
+|---|---|---|
+|기본 구현|X.XX seconds||X.XX MB|
+|최적화 버전|X.XX seconds|X.XX MB|

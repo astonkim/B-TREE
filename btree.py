@@ -1,4 +1,5 @@
 import time
+import tracemalloc
 
 class Node:
     def __init__(self, leaf=True):
@@ -95,6 +96,15 @@ class BTree:
                         i += 1
                 self.insert_nonfull(n.kids[i], k, v)
 
+# 메모리 사용량 포맷 함수
+def format_memory(bytes):
+    if bytes < 1024:
+        return f"{bytes} B"
+    elif bytes < 1024*1024:
+        return f"{bytes / 1024:.2f} KB"
+    else:
+        return f"{bytes / 1024 / 1024:.2f} MB"
+    
 # 데이터 파일에서 key-value 쌍 load
 def load_data(filename):
     data = []
@@ -114,18 +124,23 @@ def run_insert(tree, path):
     data = load_data(path)
     print(f"Loaded {len(data)} records.")
     
+    tracemalloc.start()
     print("Inserting...", end='', flush=True)
     t0 = time.time()
     for k, v in data:
         tree.insert(k, v)
     t1 = time.time()
+    current, peak = tracemalloc.get_traced_memory()
+    tracemalloc.stop()
     
     print(f" Done in {t1 - t0:.2f} seconds.")
+    print(f" Memory usage: Current: {format_memory(current)}, Peak: {format_memory(peak)}")
     
     return data
 
 # 검색 작업 수행
 def run_search(tree, data, outpath):
+    tracemalloc.start()
     print("Searching...", end='', flush=True)
     t0 = time.time()
     
@@ -135,7 +150,10 @@ def run_search(tree, data, outpath):
         results.append((k, v))
     
     t1 = time.time()
+    current, peak = tracemalloc.get_traced_memory()
+    tracemalloc.stop()
     print(f" Done in {t1 - t0:.2f} seconds.")
+    print(f" Memory usage: Current: {format_memory(current)}, Peak: {format_memory(peak)}")
     
     print(f"Writing results to {outpath}...", end='', flush=True)
     with open(outpath, 'w') as f:

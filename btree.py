@@ -45,10 +45,10 @@ class BTree:
             self.root = s
             s.kids.append(rn)
             self.split(s, 0)
-            self.insert_nonfull(s, k, v)
+            self.insert_notfull(s, k, v)
         # root node가 가득 차지 않았을 때: 바로 삽입
         else:
-            self.insert_nonfull(rn, k, v)
+            self.insert_notfull(rn, k, v)
 
     # node split 메서드
     # t: 최소 차수, pn: 분할할 parent node, cn_index: 분할할 child node의 인덱스, cn: 분할할 child node, new_n: 새로 생성할 node
@@ -77,7 +77,7 @@ class BTree:
             cn.kids = cn.kids[:t]
 
     # 재귀적으로 삽입하는 메서드 (node가 가득 차지 않은 node에 삽입) - n: 현재 node, k: 삽입할 key, v: 삽입할 value
-    def insert_nonfull(self, n, k, v):
+    def insert_notfull(self, n, k, v):
             i = len(n.keys) - 1
             # leaf node일 때: 적절한 위치를 찾아 key와 value 삽입
             if n.leaf:
@@ -94,7 +94,7 @@ class BTree:
                     self.split(n, i)
                     if k > n.keys[i]:
                         i += 1
-                self.insert_nonfull(n.kids[i], k, v)
+                self.insert_notfull(n.kids[i], k, v)
     
     # Delete 메서드 - k: 삭제할 key
     def delete(self, k):
@@ -147,11 +147,11 @@ class BTree:
             n.vals[i] = predecessor_v
             self._delete(n.kids[i], predecessor_k)
     # 2-2) 삭제할 key의 오른쪽 child node가 t개 이상의 key를 가지고 있을 때: 오른쪽 child node에서 가장 작은 key를 찾아 삭제할 key와 교체 후 재귀적으로 삭제
-        elif len(n.kids[i+1].keys) >= t:
+        elif len(n.kids[i + 1].keys) >= t:
             successor_k, successor_v = self.get_successor(n, i) # get_successor 아래에서 구현 예정
             n.keys[i] = successor_k
             n.vals[i] = successor_v
-            self._delete(n.kids[i+1], successor_k)
+            self._delete(n.kids[i + 1], successor_k)
             
     # 2-3) 삭제할 key의 양쪽 child node가 모두 t-1개 이하의 key를 가지고 있을 때: 왼쪽과 오른쪽 child node를 병합한 후 삭제할 key가 포함된 새로운 child node에서 재귀적으로 삭제
         else:
@@ -167,7 +167,7 @@ class BTree:
         return current.keys[-1], current.vals[-1]
     def get_successor(self, n, i):
         # 오른쪽 subtree에서 가장 작은 key를 찾음
-        current = n.kids[i+1]
+        current = n.kids[i + 1]
         while not current.leaf:
             current = current.kids[0]
         return current.keys[0], current.vals[0]
@@ -177,30 +177,30 @@ class BTree:
         t = self.t
         
         # 1) 왼쪽 sibling이 t개 이상의 key를 가지고 있을 때: 왼쪽 sibling에서 key를 빌려옴
-        if i > 0 and len(n.kids[i-1].keys) >= t:
+        if i > 0 and len(n.kids[i - 1].keys) >= t:
             self.borrow_left(n, i) # borrow_left 아래에서 구현 예정
         # 2) 오른쪽 sibling이 t개 이상의 key를 가지고 있을 때: 오른쪽 sibling에서 key를 빌려옴
-        elif i < len(n.kids) - 1 and len(n.kids[i+1].keys) >= t:
+        elif i < len(n.kids) - 1 and len(n.kids[i + 1].keys) >= t:
             self.borrow_right(n, i) # borrow_right 아래에서 구현 예정
         # 3) 양쪽 sibling이 모두 t-1개 이하의 key를 가지고 있을 때: sibling과 병합
         else:
             if i < len(n.kids) - 1:
                 self.merge(n, i) # merge 아래에서 구현 예정
             else:
-                self.merge(n, i-1) # merge 아래에서 구현 예정
+                self.merge(n, i - 1) # merge 아래에서 구현 예정
     
     # 왼쪽 sibling에서 key를 빌려오는 메서드 - n: 현재 node, i: child node의 인덱스
     def borrow_left(self, n, i):
         child = n.kids[i]
-        sibling = n.kids[i-1]
+        sibling = n.kids[i - 1]
         
         # parent key를 child 앞에 삽입
-        child.keys.insert(0, n.keys[i-1])
-        child.vals.insert(0, n.vals[i-1])
+        child.keys.insert(0, n.keys[i - 1])
+        child.vals.insert(0, n.vals[i - 1])
         
         # sibling의 마지막 key를 parent로 이동
-        n.keys[i-1] = sibling.keys.pop()
-        n.vals[i-1] = sibling.vals.pop()
+        n.keys[i - 1] = sibling.keys.pop()
+        n.vals[i - 1] = sibling.vals.pop()
         
         # sibling의 마지막 child를 child의 첫 번째 child로 이동 (leaf가 아닐 때)
         if not sibling.leaf:
@@ -209,7 +209,7 @@ class BTree:
     # 오른쪽 sibling에서 key를 빌려오는 메서드 - n: 현재 node, i: child node의 인덱스
     def borrow_right(self, n, i):
         child = n.kids[i]
-        sibling = n.kids[i+1]
+        sibling = n.kids[i + 1]
         
         # parent key를 child 뒤에 삽입
         child.keys.append(n.keys[i])
@@ -226,7 +226,7 @@ class BTree:
     # 두 child node를 병합하는 메서드 - n: 현재 node, i: 병합할 child node의 인덱스
     def merge(self, n, i):
         left = n.kids[i]
-        right = n.kids[i+1]
+        right = n.kids[i + 1]
         
         # parent key를 left child에 추가
         left.keys.append(n.keys.pop(i))
@@ -239,7 +239,7 @@ class BTree:
             left.kids.extend(right.kids)
         
         # parent에서 right child 제거
-        n.kids.pop(i+1)
+        n.kids.pop(i + 1)
         
         
 # 메모리 사용량 포맷 함수
@@ -313,10 +313,10 @@ def run_search(tree, data, outpath):
     return results
 
 # 삭제 작업 수행
-def run_delete(tree, data, path):
-    print(f"\nLoading {path} for deletion...")
+def run_delete(tree, path):
+    print(f"\nLoading {path}...")
     data = load_data(path)
-    print(f"Loaded {len(data)} records for deletion.")
+    print(f"Loaded {len(data)} records.")
     
     tracemalloc.start()
     print("Deleting...", end='', flush=True)
@@ -351,7 +351,7 @@ def compare_files(f1, f2):
         if l1.strip() != l2.strip():
             diff += 1
             if diff <= 3:
-                print(f"\n  Line {i+1}: '{l1.strip()}' vs '{l2.strip()}'")
+                print(f"\n  Line {i + 1}: '{l1.strip()}' vs '{l2.strip()}'")
 
     if diff == 0:
         print("MATCH")
@@ -395,12 +395,12 @@ def main():
             if tree is None or data is None:
                 print("Error: Insert data first")
                 continue 
-            del_fname = input("Enter delete file name(e.g., delete.csv, delete2.csv): ").strip()
-            cmp_fname = input("Enter compare file name(e.g., delete_compare.csv, delete_compare2.csv): ").strip()
+            deletion_fname = input("Enter delete file name(e.g., delete.csv, delete2.csv): ").strip()
+            compare_fname = input("Enter compare file name(e.g., delete_compare.csv, delete_compare2.csv): ").strip()
             try:
-                run_delete(tree, data, del_fname)
+                run_delete(tree, deletion_fname)
                 run_search(tree, data, "delete_result.csv")
-                compare_files("delete_result.csv", cmp_fname)
+                compare_files("delete_result.csv", compare_fname)
             except FileNotFoundError:
                 print(f"Error: file not found - {e}")
             except Exception as e:

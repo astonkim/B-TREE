@@ -186,7 +186,7 @@ def menu():
     return input("Select an option (1-3): ").strip()
 
 def main():
-    tree = BTree(t=100)
+    tree = None
     data = None
     
     while True:
@@ -195,16 +195,18 @@ def main():
         if choice == "1":
             fname = input("Enter input file name(e.g., input.csv, input22.csv): ").strip()
             try:
+                # 새로운 B-Tree 인스턴스 생성 (매 삽입마다 초기화)
+                tree = BTree(t=100)
                 data = run_insert(tree, fname)
-                results = run_search(tree, data, "search_insertion_result.csv")
-                compare_files(fname, "search_insertion_result.csv")
+                run_search(tree, data, "search_result.csv")
+                compare_files(fname, "search_result.csv")
             except FileNotFoundError:
                 print(f"File '{fname}' not found. Please try again.")
             except Exception as e:
                 print(f"Error: {e}")
         
         elif choice == "2":
-            if data is None:
+            if tree is None or data is None:
                 print("Error: Insert data first")
                 continue 
             fname = input("Enter input file name for deletion(e.g., delete.csv, delete2.csv): ").strip()

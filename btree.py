@@ -95,7 +95,153 @@ class BTree:
                     if k > n.keys[i]:
                         i += 1
                 self.insert_nonfull(n.kids[i], k, v)
-
+    
+    # Delete 메서드 - k: 삭제할 key
+    def delete(self, k):
+        self._delete(self.root, k)
+        # root node가 비어있으면 child node를 새로운 root로 설정
+        if len(self.root.keys) == 0 and not self.root.leaf:
+            self.root = self.root.kids[0]
+    
+    # n: 현재 node, k: 삭제할 key
+    def _delete(self, n, k):
+        t = self.t
+        # 현재 node에서 key의 위치를 찾음
+        i = 0
+        while i < len(n.keys) and k > n.keys[i]:
+            i += 1
+        
+        # 1) key가 현재 node에 존재할 때
+        if i < len(n.keys) and n.keys[i] == k:
+            if n.leaf:
+                # 1-1) leaf node일 때: key와 value 단순 삭제
+                n.keys.pop(i)
+                n.vals.pop(i)
+            else:
+                # 2) internal node일 때: 세 가지 경우로 나눔 (아래에서 구현 예정)
+                self.delete_internal_node(n, i)
+        else:
+            # 3) key가 현재 node에 존재하지 않을 때: child node로 내려가서 삭제
+            if n.leaf:
+                return  # key가 트리에 존재하지 않음
+            
+            # child node가 최소 키 수보다 적을 때: child node를 채우기 (key 개수 확보)
+            if len(n.kids[i].keys) < t:
+                self.fill(n, i)
+                
+            #fill 후에 child node가 변경될 수 있으므로 다시 탐색 (index i 조정)
+            if i > len(n.keys):
+                i -= 1
+            
+            self._delete(n.kids[i], k)
+    
+    # internal node에서 key 삭제 처리 메서드 - n: 현재 node, i: 삭제할 key의 인덱스
+    def delete_internal_node(self, n, i):
+        t = self.t
+        k = n.keys[i]
+    
+    # 2-1) 삭제할 key의 왼쪽 child node가 t개 이상의 key를 가지고 있을 때: 왼쪽 child node에서 가장 큰 key를 찾아 삭제할 key와 교체 후 재귀적으로 삭제
+        if len(n.kids[i].keys) >= t:
+            predecessor_k, predecessor_v = self.get_predecessor(n, i) # get_predecessor 아래에서 구현 예정
+            n.keys[i] = predecessor_k
+            n.vals[i] = predecessor_v
+            self._delete(n.kids[i], predecessor_k)
+    # 2-2) 삭제할 key의 오른쪽 child node가 t개 이상의 key를 가지고 있을 때: 오른쪽 child node에서 가장 작은 key를 찾아 삭제할 key와 교체 후 재귀적으로 삭제
+        elif len(n.kids[i+1].keys) >= t:
+            successor_k, successor_v = self.get_successor(n, i) # get_successor 아래에서 구현 예정
+            n.keys[i] = successor_k
+            n.vals[i] = successor_v
+            self._delete(n.kids[i+1], successor_k)
+            
+    # 2-3) 삭제할 key의 양쪽 child node가 모두 t-1개 이하의 key를 가지고 있을 때: 왼쪽과 오른쪽 child node를 병합한 후 삭제할 key가 포함된 새로운 child node에서 재귀적으로 삭제
+        else:
+            self.merge(n, i) # merge 아래에서 구현 예정
+            self._delete(n.kids[i], k)
+    
+    # predecessor와 successor를 찾는 메서드 - n: 현재 node, i: key의 인덱스
+    def get_predecessor(self, n, i):
+        # 왼쪽 subtree에서 가장 큰 key를 찾음
+        current = n.kids[i]
+        while not current.leaf:
+            current = current.kids[-1]
+        return current.keys[-1], current.vals[-1]
+    def get_successor(self, n, i):
+        # 오른쪽 subtree에서 가장 작은 key를 찾음
+        current = n.kids[i+1]
+        while not current.leaf:
+            current = current.kids[0]
+        return current.keys[0], current.vals[0]
+    
+    # child node를 채우는 메서드 - n: 현재 node, i: 채울 child node의 인덱스
+    def fill(self, n, i):
+        t = self.t
+        
+        # 1) 왼쪽 sibling이 t개 이상의 key를 가지고 있을 때: 왼쪽 sibling에서 key를 빌려옴
+        if i > 0 and len(n.kids[i-1].keys) >= t:
+            self.borrow_left(n, i) # borrow_left 아래에서 구현 예정
+        # 2) 오른쪽 sibling이 t개 이상의 key를 가지고 있을 때: 오른쪽 sibling에서 key를 빌려옴
+        elif i < len(n.kids) - 1 and len(n.kids[i+1].keys) >= t:
+            self.borrow_right(n, i) # borrow_right 아래에서 구현 예정
+        # 3) 양쪽 sibling이 모두 t-1개 이하의 key를 가지고 있을 때: sibling과 병합
+        else:
+            if i < len(n.kids) - 1:
+                self.merge(n, i) # merge 아래에서 구현 예정
+            else:
+                self.merge(n, i-1) # merge 아래에서 구현 예정
+    
+    # 왼쪽 sibling에서 key를 빌려오는 메서드 - n: 현재 node, i: child node의 인덱스
+    def borrow_left(self, n, i):
+        child = n.kids[i]
+        sibling = n.kids[i-1]
+        
+        # parent key를 child 앞에 삽입
+        child.keys.insert(0, n.keys[i-1])
+        child.vals.insert(0, n.vals[i-1])
+        
+        # sibling의 마지막 key를 parent로 이동
+        n.keys[i-1] = sibling.keys.pop()
+        n.vals[i-1] = sibling.vals.pop()
+        
+        # sibling의 마지막 child를 child의 첫 번째 child로 이동 (leaf가 아닐 때)
+        if not sibling.leaf:
+            child.kids.insert(0, sibling.kids.pop())
+    
+    # 오른쪽 sibling에서 key를 빌려오는 메서드 - n: 현재 node, i: child node의 인덱스
+    def borrow_right(self, n, i):
+        child = n.kids[i]
+        sibling = n.kids[i+1]
+        
+        # parent key를 child 뒤에 삽입
+        child.keys.append(n.keys[i])
+        child.vals.append(n.vals[i])
+        
+        # sibling의 첫 번째 key를 parent로 이동
+        n.keys[i] = sibling.keys.pop(0)
+        n.vals[i] = sibling.vals.pop(0)
+        
+        # sibling의 첫 번째 child를 child의 마지막 child로 이동 (leaf가 아닐 때)
+        if not sibling.leaf:
+            child.kids.append(sibling.kids.pop(0))
+    
+    # 두 child node를 병합하는 메서드 - n: 현재 node, i: 병합할 child node의 인덱스
+    def merge(self, n, i):
+        left = n.kids[i]
+        right = n.kids[i+1]
+        
+        # parent key를 left child에 추가
+        left.keys.append(n.keys.pop(i))
+        left.vals.append(n.vals.pop(i))
+        
+        # right child의 key와 value를 left child에 병합
+        left.keys.extend(right.keys)
+        left.vals.extend(right.vals)
+        if not left.leaf:
+            left.kids.extend(right.kids)
+        
+        # parent에서 right child 제거
+        n.kids.pop(i+1)
+        
+        
 # 메모리 사용량 포맷 함수
 def format_memory(bytes):
     if bytes < 1024:
@@ -166,6 +312,28 @@ def run_search(tree, data, outpath):
     
     return results
 
+# 삭제 작업 수행
+def run_delete(tree, data, path):
+    print(f"\nLoading {path} for deletion...")
+    data = load_data(path)
+    print(f"Loaded {len(data)} records for deletion.")
+    
+    tracemalloc.start()
+    print("Deleting...", end='', flush=True)
+    t0 = time.time()
+    
+    for k, _ in data:
+        tree.delete(k)
+    
+    t1 = time.time()
+    current, peak = tracemalloc.get_traced_memory()
+    tracemalloc.stop()
+    
+    print(f" Done in {t1 - t0:.2f} seconds.")
+    print(f" Memory usage: Current: {format_memory(current)}, Peak: {format_memory(peak)}")
+    
+    return data
+
 # 파일 비교 함수
 def compare_files(f1, f2):
     print(f"Comparing {f1} vs {f2}...", end='', flush=True)
@@ -227,8 +395,16 @@ def main():
             if tree is None or data is None:
                 print("Error: Insert data first")
                 continue 
-            fname = input("Enter input file name for deletion(e.g., delete.csv, delete2.csv): ").strip()
-            print("Deletion not implemented yet. Please try again later.")
+            del_fname = input("Enter delete file name(e.g., delete.csv, delete2.csv): ").strip()
+            cmp_fname = input("Enter compare file name(e.g., delete_compare.csv, delete_compare2.csv): ").strip()
+            try:
+                run_delete(tree, data, del_fname)
+                run_search(tree, data, "delete_result.csv")
+                compare_files("delete_result.csv", cmp_fname)
+            except FileNotFoundError:
+                print(f"Error: file not found - {e}")
+            except Exception as e:
+                print(f"Error: {e}")
         
         elif choice == "3":
             print("Exiting program. Goodbye!")

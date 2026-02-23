@@ -124,13 +124,17 @@ B-TREE/
 ### Deletion 최적화
 
 - delete.csv
-|버전|Deletion 시간|메모리 사용량(Deletion)|
-|---|---|---|
-|기본 구현|X.XX seconds||X.XX MB|
-|최적화 버전|X.XX seconds|X.XX MB|
+|버전|Deletion 시간|Search 시간|메모리 사용량(Deletion)|메모리 사용량(Search)|
+|---|---|---|---|---|
+|기본 구현|3.96 seconds|6.59 seconds|9.07 MB|61.36 MB|
+|최적화 버전|X.XX seconds|X.XX seconds|X.XX MB|X.XX MB|
+
+<img width="667" height="418" alt="Image" src="https://github.com/user-attachments/assets/2455298a-e5a2-4635-b540-c64a2b79f00d" />
 
 - delete2.csv
-|버전|Deletion 시간|메모리 사용량(Deletion)|
-|---|---|---|
-|기본 구현|X.XX seconds||X.XX MB|
-|최적화 버전|X.XX seconds|X.XX MB|
+|버전|Deletion 시간|Search 시간|메모리 사용량(Deletion)|메모리 사용량(Search)|
+|---|---|---|---|---|
+|기본 구현|4.90 seconds|8.19 seconds|8.67 MB|61.36 MB|
+|최적화 버전|X.XX seconds|X.XX seconds|X.XX MB|X.XX MB|
+
+<img width="667" height="417" alt="Image" src="https://github.com/user-attachments/assets/dfc7cd5d-70ec-4261-9614-c6920938a7b3" />

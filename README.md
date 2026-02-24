@@ -228,3 +228,267 @@ B-TREE/
 #### 메모리 사용량 (~4% 감소)
 - `__slots__`로 instance당 dictionary overhead 제거
 - 100만 개 records 기준, 약 0.8MB 절감
+
+## 8. 코드에 대한 간단한 설명
+
+### 8-1. Node Class
+
+#### 속성 정의
+
+```python
+class Node:
+    def __init__(self, leaf=True):
+        self.keys = []   # 키 리스트 (정렬된 상태 유지)
+        self.vals = []   # 값 리스트 (keys와 1:1 대응)
+        self.kids = []   # 자식 노드 리스트
+        self.leaf = leaf # 리프 노드 여부
+```
+
+| 속성 | 타입 | 설명 |
+|------|------|------|
+| `keys` | list[int] | 정렬된 키들 |
+| `vals` | list[any] | 키에 대응하는 값들 |
+| `kids` | list[Node] | 자식 노드들 (리프면 비어있음) |
+| `leaf` | bool | True면 리프 노드 |
+
+#### Node Structure
+
+```
+Internal Node:               Leaf Node:
+┌─────────────────────┐      ┌─────────────────────┐
+│ keys: [10, 20, 30]  │      │ keys: [10, 20, 30]  │
+│ vals: [v1, v2, v3]  │      │ vals: [v1, v2, v3]  │
+│ kids: [c0,c1,c2,c3] │      │ kids: []            │
+│ leaf: False         │      │ leaf: True          │
+└─────────────────────┘      └─────────────────────┘
+      ↓   ↓   ↓   ↓
+     c0  c1  c2  c3
+```
+
+#### keys와 kids의 관계
+
+```
+       keys:  [  10  ,  20  ,  30  ]
+              ↑      ↑      ↑      ↑
+       kids: [c0]  [c1]  [c2]  [c3]
+              │      │      │      │
+              ▼      ▼      ▼      ▼
+            <10   10~20  20~30   >30
+```
+
+- `kids[i]`의 모든 키 < `keys[i]`
+- `kids[i+1]`의 모든 키 > `keys[i]`
+- **항상**: `len(kids) == len(keys) + 1` (내부 노드일 때)
+
+### 8-2. BTree Class 초기화
+
+```python
+class BTree:
+    def __init__(self, t=100):
+        self.t = t           # minimum degree (최소 차수)
+        self.root = Node()   # 빈 루트 노드로 시작
+```
+
+#### Minimum Degree (t) 의미
+
+| t 기준 | 조건 |
+|--------|------|
+| 노드당 최소 키 (루트 제외) | t - 1 |
+| 노드당 최대 키 | 2t - 1 |
+| 노드당 최소 자식 (루트 제외) | t |
+| 노드당 최대 자식 | 2t |
+
+**t=100일 때**:
+- 최소 키: 99개
+- 최대 키: 199개
+- 최소 자식: 100개
+- 최대 자식: 200개
+
+### 8-3. Search
+
+```
+검색 방식: Top-Down 재귀 탐색
+시간 복잡도: O(t × log_t n)  [linear search 버전]
+           O(log t × log_t n)  [binary search 버전]
+```
+
+![Image](https://github.com/user-attachments/assets/2a4d74fd-e54d-4d95-971b-07dc1efa65c5)
+
+#### Step 1: 시작 노드 설정
+
+```python
+def search(self, k, n=None):
+    # Step 1: 시작 노드 설정
+    if n is None:
+        n = self.root
+```
+
+**첫 호출 시 루트에서 시작**, 재귀 호출 시에는 자식 노드가 전달됨
+
+#### Step 2: 현재 노드에서 키 위치 탐색 (Linear Search)
+
+```python
+    # Step 2: 현재 노드에서 키 위치 탐색 (Linear Search)
+    i = 0
+    while i < len(n.keys) and k > n.keys[i]:
+        i += 1
+```
+
+[Linear Search 동작 원리]
+```
+예시: keys = [10, 30, 50, 70], k = 45
+
+i=0: 45 > 10? Yes → i++
+i=1: 45 > 30? Yes → i++
+i=2: 45 > 50? No  → 종료
+
+결과: i = 2
+의미: k는 keys[1](=30)과 keys[2](=50) 사이에 있음
+     → kids[2]에서 찾아야 함
+```
+
+#### Step 3: 키를 찾은 경우
+
+```python
+    # Step 3: 키를 찾은 경우
+    if i < len(n.keys) and k == n.keys[i]:
+        return n.vals[i]
+```
+
+**키 발견 시 즉시 값 반환**
+
+```
+keys = [10, 30, 50], k = 30
+
+i=0: 30 > 10? Yes → i++
+i=1: 30 > 30? No  → 종료
+     i=1, keys[1] == 30 → 찾음!
+
+return vals[1]
+```
+
+#### Step 4: 리프 노드인데 키가 없는 경우
+
+```python
+    # Step 4: 리프 노드인데 키가 없는 경우
+    elif n.leaf:
+        return None
+```
+
+**리프까지 내려왔는데 키가 없으면** → 트리에 존재하지 않음
+
+```
+Tree:       [30]
+           /    \
+        [10]    [50]
+        
+search(25):
+- root [30]: 25 < 30 → kids[0]으로
+- [10]: 25 > 10, leaf이고 키 없음 → return None
+```
+
+#### Step 5: 내부 노드면 자식으로 재귀
+
+```python
+    # Step 5: 내부 노드면 자식으로 재귀
+    else:
+        return self.search(k, n.kids[i])
+```
+
+**적절한 자식 노드로 내려가서 계속 탐색**
+
+```
+Tree:           [30, 60]
+               /   |    \
+           [10,20][40,50][70,80]
+           
+search(45):
+- root [30,60]: i=1 (30 < 45 < 60)
+  → kids[1] = [40,50]으로 재귀
+- [40,50]: i=1 (40 < 45 < 50)
+  → leaf이고 키 없음 → return None
+```
+
+### 8-4. Insertion
+
+```
+삽입 방식: Proactive Top-Down Split
+핵심 원리: "삽입은 항상 리프에서, 하지만 내려가면서 미리 split"
+시간 복잡도: O(t × log_t n)
+```
+
+**Proactive Split**: 내려가기 **전에** 가득 찬 노드를 미리 split  
+**Reactive Split**: 삽입 **후에** 넘치면 올라오며 split
+
+→ Proactive Split이 더 효율적 (재귀 호출 횟수 감소)
+→ 해당 코드에서는 Proactive Split Top-Down 방식으로 구현
+
+```
+Proactive Split (현재 구현):
+    [Full]              [Split]
+       ↓          →        ↓
+    [Node]              [Node]
+       ↓                   ↓
+    [Leaf] ← 삽입      [Leaf] ← 안전하게 삽입
+    
+Reactive Split:
+    [Node]              [Node] ← split 전파
+       ↓                   ↑
+    [Leaf] ← 삽입      [Overflow!]
+```
+
+![Image](https://github.com/user-attachments/assets/e43ac0c2-35b9-46d3-8621-4263b0284401)
+
+![Image](https://github.com/user-attachments/assets/91787c97-340f-4316-95fc-7ebbcb4ee5c6)
+
+### 8-5. Deletion
+
+**"내려가면서 미리 준비하는"** Top-Down 방식
+
+```
+        [Root]
+           ↓  ← 내려가기 전에 미리 fill() 호출
+        [Node]
+           ↓  ← 키 개수가 충분한 상태로 내려감
+        [Leaf] ← 여기서 삭제해도 underflow 걱정 없음
+```
+
+### Top-Down vs Bottom-Up 비교
+
+| 특성 | Top-Down (Proactive) | Bottom-Up (Reactive) |
+|------|----------------------|----------------------|
+| **동작 시점** | 자식으로 내려가기 **전에** 조정 | 삭제 **후에** 올라오며 조정 |
+| **조정 방향** | 루트 → 리프 (하향) | 리프 → 루트 (상향) |
+| **장점** | 한 번의 하향 순회로 완료 | 구현이 직관적 |
+| **단점** | 불필요한 조정 가능성 | 부모 포인터 필요 또는 재귀 스택 |
+| **현재 코드** | ✅ 이 방식 | - |
+
+```python
+def _delete(self, n, k):
+    ...
+    else:
+        # 3) key가 현재 node에 존재하지 않을 때
+        if n.leaf:
+            return
+        
+        # ★★★ 핵심: 자식으로 내려가기 "전에" fill() 호출 ★★★
+        if len(n.kids[i].keys) < t:
+            self.fill(n, i)  # ← 미리 키 개수 확보!
+        
+        # fill 후에 안전하게 내려감
+        self._delete(n.kids[i], k)  # ← 이제 내려가도 안전
+```
+
+| 특징 | 설명 |
+|------|------|
+| **방식** | Top-Down (Proactive) |
+| **장점** | 한 번의 하향 순회로 삭제 완료 |
+| **키 탐색** | Linear search (`while i < len(n.keys)`) |
+| **내부 노드 삭제** | Predecessor 우선, Successor 차선, Merge 최후 |
+| **Underflow 방지** | 자식 진입 전 `fill()` 호출 |
+| **fill() 우선순위** | Borrow Left → Borrow Right → Merge |
+| **트리 높이 감소** | 루트가 비면 자식을 새 루트로 승격 |
+
+![Image](https://github.com/user-attachments/assets/e4a74761-858f-4c96-a435-221991e19b45)
+
+![Image](https://github.com/user-attachments/assets/3313c35e-ad75-47ba-8660-8690f73b7ae7)
